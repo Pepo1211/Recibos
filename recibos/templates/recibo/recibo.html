@@ -1,119 +1,103 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:py="http://genshi.edgewall.org/"
-      xmlns:xi="http://www.w3.org/2001/XInclude">
-<xi:include href="../master.html"/>
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from PIL import Image
+
+# Save the HTML content to a file
+html_content = """
+<!DOCTYPE html>
+<html lang="es">
 <head>
-    <title>Recibo ${recibo.id}</title>
-    <meta content="text/html; charset=UTF-8" http-equiv="content-type"/>
-    <script type="text/javascript"
-            src="${tg.url('/static/javascript/producto.js')}"></script>
-    <script type="text/javascript"
-            src="${tg.url('/static/javascript/venta.js')}"></script>
-    <script type="text/javascript">
-        $(document).ready(function () {
-            Producto.url = '${tg.url('/')}';
-            Producto.activos();
-            Producto.cambiado();
-            Venta.agregando();
-        });
-    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprobante de Pago</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .comprobante {
+            border: 1px solid #000;
+            padding: 20px;
+            width: 600px;
+            margin: auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .header p {
+            margin: 5px 0;
+        }
+        .details {
+            margin-bottom: 20px;
+        }
+        .details p {
+            margin: 5px 0;
+        }
+        .total {
+            text-align: right;
+            font-size: 18px;\n            font-weight: bold;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+        }
+    </style>
 </head>
 <body>
-<div class="row">
-    <div class="col-md-10">
-        <div class="page-header">
-            <h1>Recibo ${recibo.id}</h1>
-            <h2>
-                <span py:if="recibo.afiliado != None">${recibo.afiliado}</span>
-                <span>${recibo.cliente}</span>
-                <span id="fecha">${fecha}</span>
-            </h2>
+    <div class="comprobante">
+        <div class="header">
+            <h1>Comprobante de Pago</h1>
+            <p><strong>Empresa:</strong> EcElectricidad</p>
+        </div>
+
+        <div class="details">
+            <p><strong>Receptor:</strong> Allan Rosado</p>
+            <p><strong>Fecha de Emisión:</strong> 09/12/2024</p>
+            <p><strong>Método de Pago:</strong> Efectivo</p>
+            <p><strong>Concepto:</strong> Pago de servicios</p>
+        </div>
+
+        <div class="total">
+            <p>Total: $124.00</p>
+        </div>
+
+        <div class="footer">
+            <p>Este comprobante es válido como constancia de pago.</p>
+            <p>Gracias por su preferencia.</p>
         </div>
     </div>
-    <div class="col-md-2">
-        <nav class="well">
-            <ul class="nav nav-pills nav-stacked">
-                <li>
-                    <a href="${tg.url('impresion/{0}'.format(recibo.id))}">
-                        Imprimir y Cerrar
-                    </a>
-                </li>
-                <li>
-                    <a href="${tg.url('anular/{0}'.format(recibo.id))}">Anular</a>
-                </li>
-            </ul>
-        </nav>
-    </div>
-</div>
-<div class="row">
-    <div class="col-md-12">
-        <table class="table table-striped">
-            <caption>Ventas del Recibo</caption>
-            <colgroup width="16%">
-                <col/>
-                <col/>
-                <col/>
-                <col/>
-                <col/>
-            </colgroup>
-            <thead>
-            <tr>
-                <th>Cantidad</th>
-                <th>Concepto</th>
-                <th>Detalle</th>
-                <th>Precio Unitario</th>
-                <th>Valor</th>
-                <th>Acciones</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr py:for="venta in recibo.ventas" id="venta-${venta.id}">
-                <td>${venta.cantidad}</td>
-                <td>${venta.producto.nombre}</td>
-                <td>${venta.descripcion}</td>
-                <td>${locale.currency(venta.unitario, True, True)}</td>
-                <td>${locale.currency(venta.valor(), True, True)}</td>
-                <td>
-                    <button py:if="not recibo.impreso" class="btn btn-danger" onclick="Venta.eliminar('${tg.url('venta/eliminar/{0}'.format(venta.id))}')">
-                        Eliminar
-                    </button>
-                </td>
-            </tr>
-            </tbody>
-            <tfoot>
-            <tr>
-                <th colspan="4">Total:</th>
-                <th colspan="4">${locale.currency(recibo.total(), True, True)}</th>
-            </tr>
-            </tfoot>
-        </table>
-        <form action="venta/agregar" py:if="not recibo.impreso">
-            <table>
-                <colgroup width="16%">
-                    <col/>
-                    <col/>
-                    <col/>
-                    <col/>
-                    <col/>
-                </colgroup>
-                <tr>
-                    <td><div class="form-group col-md-12"><input class="form-control" tabindex="1" name="cantidad" id="cantidad"/></div></td>
-                    <td><div class="form-group col-md-12"><select tabindex="2" name="producto" class="productos form-control" id="producto"/></div></td>
-                    <td><div class="form-group col-md-12"><input class="form-control" tabindex="2" name="descripcion"/></div></td>
-                    <td><div class="form-group col-md-12"><input class="form-control" tabindex="3" name="unitario" id="unitario"/></div></td>
-                    <td id="valor"></td>
-                    <td>
-                        <div class="form-group col-md-12">
-                            <input type="hidden" value="${recibo.id}" name="recibo"/>
-                            <input tabindex="4" class="btn btn-primary" type="submit" value="Agregar"/>
-                        </div>
-                    </td>
-                </tr>
-            </table>
-        </form>
-    </div>
-</div>
 </body>
 </html>
+"""
+
+# Write the HTML to a temporary file
+html_file_path = "/mnt/data/comprobante_pago.html"
+with open(html_file_path, "w", encoding="utf-8") as file:
+    file.write(html_content)
+
+# Set up headless Chrome
+options = Options()
+options.add_argument("--headless")
+options.add_argument("--no-sandbox")
+options.add_argument("--disable-dev-shm-usage")
+options.add_argument("--window-size=800x600")
+
+# Capture the screenshot
+driver = webdriver.Chrome(options=options)
+driver.get("file://" + html_file_path)
+screenshot_path = "/mnt/data/comprobante_pago.png"
+driver.save_screenshot(screenshot_path)
+driver.quit()
+
+# Convert the screenshot to improve resolution
+image = Image.open(screenshot_path)
+image = image.resize((800, 600), Image.ANTIALIAS)
+image.save(screenshot_path)
+
+screenshot_path
